@@ -8,5 +8,5 @@ type BalanceResponse struct {
 type TransactionRequest struct {
 	State         string `json:"state"`
 	Amount        string `json:"amount"`
-	TransactionID string `json:"transactionId"`
+	TransactionID string `json:"transactionId"` //nolint: tagliatelle // Per API spec
 }

@@ -71,15 +71,15 @@ func GetBalance(userService service.UserService) http.HandlerFunc {
 		if err != nil {
 			switch {
 			case errors.Is(err, service.ErrUserNotFound):
-				response.HandleError(ctx, w, http.StatusNotFound, "user not found")
+				response.Error(ctx, w, http.StatusNotFound, "user not found")
 			default:
-				response.HandleError(ctx, w, http.StatusInternalServerError, "internal server error")
+				response.Error(ctx, w, http.StatusInternalServerError, "internal server Error")
 			}
 
 			return
 		}
 
-		response.JSON(ctx, w, http.StatusOK, balanceResponse)
+		response.OK(ctx, w, balanceResponse)
 	}
 }
 

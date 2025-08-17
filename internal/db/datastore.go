@@ -4,6 +4,8 @@ import (
 	"context"
 	"fmt"
 
+	"github.com/TiPSYDiPSY/home-task/internal/db/gorm_logger"
+
 	"github.com/TiPSYDiPSY/home-task/internal/config"
 
 	"github.com/sirupsen/logrus"
@@ -20,7 +22,9 @@ func NewPostgresDBDataStore(ctx context.Context, c config.PostgresDBConfig) (*Po
 
 	log.Info("Connecting to DB...")
 
-	db, err := gorm.Open(postgres.Open(c.DSN()), &gorm.Config{})
+	db, err := gorm.Open(postgres.Open(c.DSN()), &gorm.Config{
+		Logger: gorm_logger.New(),
+	})
 	if err != nil {
 		return nil, fmt.Errorf("failed to connect to database: %w", err)
 	}
