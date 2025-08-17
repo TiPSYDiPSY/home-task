@@ -1,30 +1,68 @@
 package user
 
 import (
+	"encoding/json"
 	"errors"
 	"net/http"
 	"strconv"
 
-	"github.com/go-chi/chi/v5"
 	"github.com/sirupsen/logrus"
+
+	"github.com/TiPSYDiPSY/home-task/internal/api/handler/public/handlers/middleware"
+	"github.com/TiPSYDiPSY/home-task/internal/model/api"
+
+	"github.com/go-chi/chi/v5"
 
 	"github.com/TiPSYDiPSY/home-task/internal/util/response"
 
 	"github.com/TiPSYDiPSY/home-task/internal/service"
 )
 
-func UpdateBalance(userService service.UserService) http.HandlerFunc {
-	return func(w http.ResponseWriter, r *http.Request) {}
-}
+const (
+	DecimalBase = 10
+	BitSize     = 64
+)
 
-func GetBalance(userService service.UserService) http.HandlerFunc {
+func UpdateBalance(userService service.UserService) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		ctx := r.Context()
 		log := logrus.WithContext(ctx)
 
 		userID, err := parseUserID(r)
 		if err != nil {
-			response.HandleError(ctx, w, http.StatusBadRequest, err.Error())
+			response.BadRequest(ctx, w, err.Error())
+
+			return
+		}
+
+		sourceType := middleware.GetSourceType(ctx)
+
+		var request api.TransactionRequest
+		if err := json.NewDecoder(r.Body).Decode(&request); err != nil {
+			log.WithError(err).Error("Failed to decode request body")
+			response.BadRequest(ctx, w, "invalid JSON format")
+
+			return
+		}
+
+		if err := userService.UpdateBalance(ctx, request, userID, sourceType); err != nil {
+			return
+		}
+
+		response.OK(ctx, w, map[string]string{
+			"status":  "success",
+			"message": "Transaction processed successfully",
+		})
+	}
+}
+
+func GetBalance(userService service.UserService) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		ctx := r.Context()
+
+		userID, err := parseUserID(r)
+		if err != nil {
+			response.BadRequest(ctx, w, err.Error())
 
 			return
 		}
@@ -35,7 +73,6 @@ func GetBalance(userService service.UserService) http.HandlerFunc {
 			case errors.Is(err, service.ErrUserNotFound):
 				response.HandleError(ctx, w, http.StatusNotFound, "user not found")
 			default:
-				log.WithError(err).Error("Error getting user balance")
 				response.HandleError(ctx, w, http.StatusInternalServerError, "internal server error")
 			}
 
@@ -52,5 +89,14 @@ func parseUserID(r *http.Request) (uint64, error) {
 		return 0, errors.New("user ID is required")
 	}
 
-	return strconv.ParseUint(userIDStr, 10, 64)
+	userID, err := strconv.ParseUint(userIDStr, DecimalBase, BitSize)
+	if err != nil {
+		return 0, errors.New("invalid user ID format")
+	}
+
+	if userID == 0 {
+		return 0, errors.New("user ID must be positive")
+	}
+
+	return userID, nil
 }

@@ -3,6 +3,8 @@ package public
 import (
 	"context"
 
+	"github.com/TiPSYDiPSY/home-task/internal/api/handler/public/handlers/middleware"
+
 	"github.com/TiPSYDiPSY/home-task/internal/api/handler/public/handlers/user"
 
 	"github.com/go-chi/chi/v5"
@@ -15,7 +17,11 @@ func Init(ctx context.Context, c *config.ServerConfig, container service.Contain
 	subRouter := chi.NewRouter()
 
 	subRouter.Group(func(r chi.Router) {
+		r.Use(middleware.SourceTypeValidator())
 		r.Post("/{userID}/transaction", user.UpdateBalance(container.UserService))
+	})
+
+	subRouter.Group(func(r chi.Router) {
 		r.Get("/{userID}/balance", user.GetBalance(container.UserService))
 	})
 
