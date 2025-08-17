@@ -1,22 +1,32 @@
 package main
 
 import (
-	"fmt"
-	"log"
-	"net/http"
-	"os"
+	"context"
+
+	"github.com/sirupsen/logrus"
+
+	"github.com/TiPSYDiPSY/home-task/internal/api"
+	"github.com/TiPSYDiPSY/home-task/internal/config"
+	"github.com/TiPSYDiPSY/home-task/internal/db"
+	"github.com/TiPSYDiPSY/home-task/internal/service"
 )
 
 func main() {
-	port := os.Getenv("PORT")
-	if port == "" {
-		port = "8080"
+	ctx := context.Background()
+
+	servConfig := config.NewServerConfig()
+	log := logrus.WithContext(ctx)
+
+	ds, err := db.NewPostgresDBDataStore(ctx, servConfig.DatabaseConnectionDetails)
+	if err != nil {
+		log.WithError(err).Fatal("Connect to DB failed with error")
 	}
 
-	http.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
-		fmt.Fprintf(w, "Hello, World!")
-	})
+	if err := ds.RunAutoMigrate(ctx); err != nil {
+		log.WithError(err).Fatal("Failed to run database migrations")
+	}
 
-	log.Printf("Server starting on port %s", port)
-	log.Fatal(http.ListenAndServe("0.0.0.0:"+port, nil))
+	container := service.NewContainer(ds)
+
+	api.StartServer(ctx, servConfig, container)
 }
