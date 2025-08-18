@@ -12,10 +12,30 @@ type Validator struct {
 	validate *validator.Validate
 }
 
+const (
+	maxDecimalPlaces = 2
+)
+
 func NewValidator() *Validator {
-	return &Validator{
+	v := &Validator{
 		validate: validator.New(),
 	}
+
+	if err := v.validate.RegisterValidation("decimal2", validateDecimal2); err != nil {
+		panic(fmt.Sprintf("failed to register decimal2 validator: %v", err))
+	}
+
+	return v
+}
+
+func validateDecimal2(fl validator.FieldLevel) bool {
+	value := fl.Field().String()
+
+	if idx := strings.IndexByte(value, '.'); idx != -1 {
+		return len(value)-idx-1 <= maxDecimalPlaces
+	}
+
+	return true
 }
 
 func (v *Validator) ValidateStruct(s any) error {
@@ -42,6 +62,8 @@ func getErrorMessage(fe validator.FieldError) string {
 		return fe.Field() + " is required"
 	case "oneof":
 		return fmt.Sprintf("%s must be one of [%s]", fe.Field(), fe.Param())
+	case "decimal2":
+		return fe.Field() + " must have at most 2 decimal places"
 	default:
 		return fe.Field() + " is invalid"
 	}
