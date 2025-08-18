@@ -21,6 +21,22 @@ const (
 	MaxSQLLength         = 200
 )
 
+const (
+	SlowPerformanceRune   = '🐌' // U+1F40C
+	FastPerformanceRune   = '⚡' // U+26A1
+	NormalPerformanceRune = '🆗' // U+1F196
+)
+
+const (
+	SelectRune  = '🔍' // U+1F50D
+	InsertRune  = '➕' // U+2795
+	UpdateRune  = '✏' // U+270F
+	DeleteRune  = '🗑' // U+1F5D1
+	OtherRune   = '📜' // U+1F4DC
+	ErrorRune   = '❌' // U+274C
+	UnknownRune = '❓' // U+2753
+)
+
 func New() *Logger {
 	return &Logger{
 		SlowThreshold: DefaultSlowThreshold,
@@ -78,11 +94,11 @@ func (l *Logger) Trace(ctx context.Context, begin time.Time, fc func() (sql stri
 
 	switch {
 	case elapsed > l.SlowThreshold:
-		fields["performance"] = "slow"
+		fields["performance"] = string(SlowPerformanceRune) + " slow"
 	case elapsed < 1*time.Millisecond:
-		fields["performance"] = "fast"
+		fields["performance"] = string(FastPerformanceRune) + " fast"
 	default:
-		fields["performance"] = "normal"
+		fields["performance"] = string(NormalPerformanceRune) + " normal"
 	}
 
 	cleanSQL := l.cleanSQL(sql)
@@ -90,12 +106,12 @@ func (l *Logger) Trace(ctx context.Context, begin time.Time, fc func() (sql stri
 
 	switch {
 	case err != nil && l.LogLevel >= logger.Error:
-		logrusLogger.WithField("error", err).Error("❌ SQL Error: " + cleanSQL)
+		logrusLogger.WithField("error", err).Error(string(ErrorRune) + " SQL Error: " + cleanSQL)
 	case elapsed > l.SlowThreshold && l.LogLevel >= logger.Warn:
-		logrusLogger.Warn("🐌 SLOW QUERY: " + cleanSQL)
+		logrusLogger.Warn(string(SlowPerformanceRune) + " SLOW QUERY: " + cleanSQL)
 	case l.LogLevel >= logger.Info:
 		emoji := l.getQueryEmoji(queryType)
-		logrusLogger.Info(emoji + " " + cleanSQL)
+		logrusLogger.Info(string(emoji) + " " + cleanSQL)
 	}
 }
 
@@ -157,18 +173,19 @@ func (*Logger) getQueryType(sql string) string {
 	}
 }
 
-func (*Logger) getQueryEmoji(queryType string) string {
-	emojiMap := map[string]string{
-		"SELECT": "🔍",
-		"INSERT": "➕",
-		"UPDATE": "✏️",
-		"DELETE": "🗑️",
-		"OTHER":  "📜",
+func (*Logger) getQueryEmoji(queryType string) rune {
+	switch queryType {
+	case "SELECT":
+		return SelectRune
+	case "INSERT":
+		return InsertRune
+	case "UPDATE":
+		return UpdateRune
+	case "DELETE":
+		return DeleteRune
+	case "OTHER":
+		return OtherRune
+	default:
+		return UnknownRune
 	}
-
-	if emoji, ok := emojiMap[queryType]; ok {
-		return emoji
-	}
-
-	return "❓"
 }

@@ -3,7 +3,11 @@ package api
 import (
 	"context"
 	"crypto/tls"
+	"errors"
 	"net/http"
+	"os"
+	"os/signal"
+	"syscall"
 	"time"
 
 	"github.com/TiPSYDiPSY/home-task/internal/api/handler/operation"
@@ -38,7 +42,30 @@ func StartServer(ctx context.Context, c *config.ServerConfig, container service.
 		TLSNextProto: make(map[string]func(*http.Server, *tls.Conn, http.Handler)),
 	}
 
-	log.WithContext(ctx).Fatal(srv.ListenAndServe())
+	quit := make(chan os.Signal, 1)
+	signal.Notify(quit, syscall.SIGINT, syscall.SIGTERM)
+
+	go func() {
+		if err := srv.ListenAndServe(); err != nil && !errors.Is(err, http.ErrServerClosed) {
+			log.WithError(err).Fatal("Server failed to start")
+		}
+	}()
+
+	log.Info("Server started successfully")
+
+	<-quit
+	log.Info("Shutting down server...")
+
+	shutdownCtx, cancel := context.WithTimeout(ctx, shutdownTimeoutSec*time.Second)
+	defer cancel()
+
+	if err := srv.Shutdown(shutdownCtx); err != nil {
+		log.WithError(err).Error("Server forced to shutdown")
+
+		return
+	}
+
+	log.Info("Server exited gracefully")
 }
 
 func initServerMux(container service.Container) *chi.Mux {
