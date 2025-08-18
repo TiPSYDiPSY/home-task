@@ -2,11 +2,12 @@ package db
 
 import (
 	"context"
-	"errors"
 	"fmt"
 	"time"
 
 	"gorm.io/gorm"
+
+	"github.com/TiPSYDiPSY/home-task/internal/errors"
 )
 
 type UserRepository interface {
@@ -20,9 +21,9 @@ const (
 )
 
 var (
-	ErrUserNotFound         = errors.New("user not found")
-	ErrDuplicateTransaction = errors.New("duplicate transaction")
-	ErrInsufficientFunds    = errors.New("insufficient funds")
+	ErrUserNotFound         = errors.ErrUserNotFound
+	ErrDuplicateTransaction = errors.ErrDuplicateTransaction
+	ErrInsufficientFunds    = errors.ErrInsufficientFunds
 )
 
 func (r *PostgresDBDataStore) GetUserData(ctx context.Context, userID uint64) (user User, err error) {
@@ -37,7 +38,7 @@ func (r *PostgresDBDataStore) UpdateUserBalance(ctx context.Context, transaction
 	defer cancel()
 
 	if err := r.db.WithContext(ctxWithTimeout).Transaction(func(tx *gorm.DB) error {
-		if err := r.checkTransactionExists(tx, transaction.UserID, transaction.TransactionID); err != nil {
+		if err := r.checkTransactionExists(tx, transaction.TransactionID); err != nil {
 			return err
 		}
 
@@ -53,10 +54,10 @@ func (r *PostgresDBDataStore) UpdateUserBalance(ctx context.Context, transaction
 	return nil
 }
 
-func (*PostgresDBDataStore) checkTransactionExists(tx *gorm.DB, userID uint64, transactionID string) error {
+func (*PostgresDBDataStore) checkTransactionExists(tx *gorm.DB, transactionID string) error {
 	var count int64
 	if err := tx.Model(&Transaction{}).
-		Where("user_id = ? AND transaction_id = ?", userID, transactionID).
+		Where("transaction_id = ?", transactionID).
 		Count(&count).Error; err != nil {
 		return fmt.Errorf("failed to check transaction existence: %w", err)
 	}

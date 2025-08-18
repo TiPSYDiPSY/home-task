@@ -13,10 +13,11 @@ type DatabaseError struct {
 }
 
 var (
-	ErrUserNotFound        = errors.New("user not found")
-	ErrInsufficientFunds   = errors.New("insufficient funds")
-	ErrInvalidAmountFormat = errors.New("invalid amount format")
-	ErrTransactionExists   = errors.New("transaction already exists")
+	ErrUserNotFound         = errors.New("user not found")
+	ErrDuplicateTransaction = errors.New("duplicate transaction")
+	ErrInsufficientFunds    = errors.New("insufficient funds")
+	ErrInvalidAmountFormat  = errors.New("invalid amount format")
+	ErrTransactionExists    = errors.New("transaction already exists")
 )
 
 func (e ValidationError) Error() string {

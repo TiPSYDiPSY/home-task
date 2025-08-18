@@ -21,6 +21,6 @@ type Transaction struct {
 	Amount        int64     `gorm:"not null"`
 	State         string    `gorm:"type:varchar(4);not null"`
 	SourceType    string    `gorm:"type:varchar(10);not null"`
-	TransactionID string    `gorm:"uniqueIndex:idx_user_transaction;not null"`
+	TransactionID string    `gorm:"uniqueIndex;not null"`
 	ProcessedAt   time.Time `gorm:"not null;default:now()"`
 }

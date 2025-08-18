@@ -55,22 +55,6 @@ func Error(ctx context.Context, w http.ResponseWriter, statusCode int, message s
 	JSON(ctx, w, statusCode, response)
 }
 
-func Success(ctx context.Context, w http.ResponseWriter, statusCode int, data interface{}, message ...string) {
-	response := SuccessResponse{
-		Data: data,
-	}
-
-	if len(message) > 0 {
-		response.Message = message[0]
-	}
-
-	JSON(ctx, w, statusCode, response)
-}
-
-func OK(ctx context.Context, w http.ResponseWriter, data interface{}, message ...string) {
-	Success(ctx, w, http.StatusOK, data, message...)
-}
-
 func BadRequest(ctx context.Context, w http.ResponseWriter, message string) {
 	Error(ctx, w, http.StatusBadRequest, message)
 }

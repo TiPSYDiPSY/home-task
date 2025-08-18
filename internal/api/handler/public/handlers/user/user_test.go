@@ -291,11 +291,6 @@ func TestUpdateBalance(t *testing.T) {
 				}, uint64(1), "game").Return(nil)
 			},
 			wantHTTPCode: http.StatusOK,
-			wantBody: `
-				{
-					"status": "success",
-					"message": "Transaction processed successfully"
-				}`,
 		},
 		{
 			name: "successful lose transaction",
@@ -316,11 +311,6 @@ func TestUpdateBalance(t *testing.T) {
 				}, uint64(2), "game").Return(nil)
 			},
 			wantHTTPCode: http.StatusOK,
-			wantBody: `
-				{
-					"status": "success",
-					"message": "Transaction processed successfully"
-				}`,
 		},
 		{
 			name: "user not found",
@@ -525,11 +515,6 @@ func TestUpdateBalance(t *testing.T) {
 				}, uint64(9), "").Return(nil)
 			},
 			wantHTTPCode: http.StatusOK,
-			wantBody: `
-				{
-					"status": "success",
-					"message": "Transaction processed successfully"
-				}`,
 		},
 	}
 
@@ -566,8 +551,10 @@ func TestUpdateBalance(t *testing.T) {
 			handler.ServeHTTP(rr, req)
 
 			assert.Equal(t, tt.wantHTTPCode, rr.Code)
-			assert.Equal(t, "application/json", rr.Header().Get("Content-Type"))
-			assert.JSONEq(t, tt.wantBody, rr.Body.String())
+			if tt.wantBody != "" {
+				assert.Equal(t, "application/json", rr.Header().Get("Content-Type"))
+				assert.JSONEq(t, tt.wantBody, rr.Body.String())
+			}
 		})
 	}
 }

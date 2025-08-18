@@ -59,14 +59,14 @@ func UpdateBalance(userService service.UserService, valid *validation.Validator)
 		}
 
 		if err := valid.ValidateStruct(&request); err != nil {
-			logger.WithError(err).Error("Request valid failed")
+			logger.WithError(err).Warn("Request valid failed")
 			response.BadRequest(ctx, w, err.Error())
 
 			return
 		}
 
 		if err := userService.UpdateBalance(ctx, request, userID, sourceType); err != nil {
-			logger.WithError(err).Error("Failed to update user balance")
+			logger.WithError(err).Warn("Failed to update user balance")
 
 			switch {
 			case errors.Is(err, customErrors.ErrUserNotFound):
@@ -84,10 +84,7 @@ func UpdateBalance(userService service.UserService, valid *validation.Validator)
 			return
 		}
 
-		response.JSON(ctx, w, http.StatusOK, map[string]string{
-			"status":  "success",
-			"message": "Transaction processed successfully",
-		})
+		w.WriteHeader(http.StatusOK)
 	}
 }
 
