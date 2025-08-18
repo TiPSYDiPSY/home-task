@@ -1,6 +1,7 @@
 GO_VERSION = $(shell sed -En 's/^go (.*)$$/\1/p' go.mod)
 VERSION ?= $(shell cat .version 2> /dev/null)
 DATE    ?= $(shell date +%FT%T%z)
+GIT_COMMIT = $(shell git rev-parse HEAD 2>/dev/null || echo "unknown")
 
 format: ## formats the source code
 	@go fmt ./...
@@ -27,3 +28,13 @@ build:
 
 run:
 	bin/home-task
+
+docker-build: ## Build Docker image with proper labels
+	docker build \
+		--build-arg GO_VERSION=$(GO_VERSION) \
+		--build-arg APP_VERSION=$(VERSION) \
+		--build-arg BUILD_DATE=$(DATE) \
+		--build-arg VCS_REF=$(GIT_COMMIT) \
+		-t home-task:$(VERSION) \
+		-t home-task:latest \
+		.

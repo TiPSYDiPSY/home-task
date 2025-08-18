@@ -36,11 +36,7 @@ EXPOSE 8080
 
 LABEL org.opencontainers.image.version="${APP_VERSION}" \
       org.opencontainers.image.created="${BUILD_DATE}" \
-      org.opencontainers.image.source="your-git-repo-url" \
+      org.opencontainers.image.source="https://github.com/TiPSYDiPSY/home-task" \
       org.opencontainers.image.revision="${VCS_REF}"
 
 ENTRYPOINT ["./home-task"]
-
-
-CMD []
-

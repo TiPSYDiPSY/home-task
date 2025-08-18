@@ -29,11 +29,11 @@ func NewServerConfig() *ServerConfig {
 	config := &ServerConfig{
 		Port: env.GetEnv("PORT", "8080"),
 		DatabaseConnectionDetails: PostgresDBConfig{
-			Username: env.GetEnv("POSTGRES_USER", "myuser"),
-			Password: env.GetEnv("POSTGRES_PASS", "mypassword"),
-			Database: env.GetEnv("POSTGRES_DB", "mydb"),
-			Host:     env.GetEnv("POSTGRES_HOST", "localhost"),
-			Port:     env.GetEnvInt("POSTGRES_PORT", "5432"),
+			Username: env.GetEnv("DB_USER", "myuser"),
+			Password: env.GetEnv("DB_PASSWORD", "mypassword"),
+			Database: env.GetEnv("DB_NAME", "mydb"),
+			Host:     env.GetEnv("DB_HOST", "localhost"),
+			Port:     env.GetEnvInt("DB_PORT", "5432"),
 		},
 	}
 
