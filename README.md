@@ -75,6 +75,7 @@ Updates a user's balance with transaction tracking.
 
 - `200 OK`: Balance updated successfully
 - `400 Bad Request`: Invalid request data or missing/invalid Source-Type header
+- `404 Not Found`: User not found
 - `409 Conflict`: Invalid request with conflicting data (e.g., duplicate transaction ID)
 - `500 Internal Server Error`: Server error
 
@@ -89,6 +90,31 @@ curl -X POST http://localhost:8080/user/1/transaction \
   "transaction_id": "e48a6dd8-09bc-4cb2-b036-59c8b497b7e2", 
   "amount": "10.50"
   }'
+```
+### Get User Balance
+
+Retrieves a user's current balance.
+
+**Endpoint**: `GET /user/{user_id}/balance`
+
+**Response**:
+
+```json
+{
+  "userId": 1,
+  "balance": "100.00"
+}
+```
+
+- `200 OK`: Balance updated successfully
+- `400 Bad Request`: Invalid request data or missing/invalid Source-Type header
+- `404 Not Found`: User not found
+- `500 Internal Server Error`: Server error
+
+**Example**:
+
+```bash
+curl -X GET http://localhost:8080/user/1/balance
 ```
 
 ## Configuration
