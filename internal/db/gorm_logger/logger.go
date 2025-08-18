@@ -76,11 +76,12 @@ func (l *Logger) Trace(ctx context.Context, begin time.Time, fc func() (sql stri
 		fields["rows"] = rows
 	}
 
-	if elapsed > l.SlowThreshold {
+	switch {
+	case elapsed > l.SlowThreshold:
 		fields["performance"] = "slow"
-	} else if elapsed < 1*time.Millisecond {
+	case elapsed < 1*time.Millisecond:
 		fields["performance"] = "fast"
-	} else {
+	default:
 		fields["performance"] = "normal"
 	}
 

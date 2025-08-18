@@ -2,6 +2,7 @@ package middleware
 
 import (
 	"bytes"
+	"fmt"
 	"io"
 	"net/http"
 	"slices"
@@ -44,9 +45,17 @@ func (lrw *loggingResponseWriter) WriteHeader(code int) {
 
 func (lrw *loggingResponseWriter) Write(data []byte) (int, error) {
 	if lrw.body != nil {
-		lrw.body.Write(data)
+		if _, err := lrw.body.Write(data); err != nil {
+			logrus.WithError(err).Warn("Failed to write to response buffer")
+		}
 	}
-	return lrw.ResponseWriter.Write(data)
+
+	n, err := lrw.ResponseWriter.Write(data)
+	if err != nil {
+		return n, fmt.Errorf("failed to write response: %w", err)
+	}
+
+	return n, nil
 }
 
 func NewLoggingMiddleware(config LoggingConfig) *LoggingMiddleware {
@@ -62,7 +71,7 @@ func NewLoggingMiddleware(config LoggingConfig) *LoggingMiddleware {
 }
 
 // Middleware
-// nolint: funlen // 62 lines is acceptable for this middleware instead of 60 lines
+// nolint: funlen,gocognit // 62 lines is acceptable for this middleware instead of 60 lines
 func (m *LoggingMiddleware) Middleware(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		ctx, span := m.Tracer.Start(r.Context(), "http_request",

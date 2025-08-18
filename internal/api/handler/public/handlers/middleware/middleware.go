@@ -55,6 +55,7 @@ func HTTPVersionValidator(next http.Handler) http.Handler {
 
 		if r.ProtoMajor != 1 || r.ProtoMinor != 1 {
 			response.BadRequest(ctx, w, "HTTP/1.1 is required")
+
 			return
 		}
 

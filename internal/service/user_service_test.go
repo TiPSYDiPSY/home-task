@@ -5,6 +5,7 @@ import (
 	"errors"
 	"testing"
 
+	errs "github.com/TiPSYDiPSY/home-task/internal/errors"
 	"github.com/stretchr/testify/assert"
 	"gorm.io/gorm"
 
@@ -52,7 +53,7 @@ func TestGetBalance(t *testing.T) {
 				mockRepo.EXPECT().GetUserData(ctx, uint64(999)).Return(db.User{}, gorm.ErrRecordNotFound)
 			},
 			expectedResult: api.BalanceResponse{},
-			expectedError:  ErrUserNotFound,
+			expectedError:  errs.ErrUserNotFound,
 		},
 		{
 			name:   "database error",
@@ -198,7 +199,7 @@ func TestUpdateBalance(t *testing.T) {
 				}
 				mockRepo.EXPECT().UpdateUserBalance(ctx, expectedTransaction).Return(db.ErrUserNotFound)
 			},
-			expectedError: ErrUserNotFound,
+			expectedError: errs.ErrUserNotFound,
 		},
 		{
 			name: "duplicate transaction",

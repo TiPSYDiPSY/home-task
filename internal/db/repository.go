@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"time"
 
 	"gorm.io/gorm"
 )
@@ -13,6 +14,11 @@ type UserRepository interface {
 	UpdateUserBalance(ctx context.Context, transaction Transaction) error
 }
 
+const (
+	ReadTimeoutSeconds  = 5
+	WriteTimeoutSeconds = 10
+)
+
 var (
 	ErrUserNotFound         = errors.New("user not found")
 	ErrDuplicateTransaction = errors.New("duplicate transaction")
@@ -20,11 +26,17 @@ var (
 )
 
 func (r *PostgresDBDataStore) GetUserData(ctx context.Context, userID uint64) (user User, err error) {
-	return user, r.db.WithContext(ctx).First(&user, userID).Error
+	ctxWithTimeout, cancel := context.WithTimeout(ctx, ReadTimeoutSeconds*time.Second)
+	defer cancel()
+
+	return user, r.db.WithContext(ctxWithTimeout).First(&user, userID).Error
 }
 
 func (r *PostgresDBDataStore) UpdateUserBalance(ctx context.Context, transaction Transaction) error {
-	if err := r.db.WithContext(ctx).Transaction(func(tx *gorm.DB) error {
+	ctxWithTimeout, cancel := context.WithTimeout(ctx, WriteTimeoutSeconds*time.Second)
+	defer cancel()
+
+	if err := r.db.WithContext(ctxWithTimeout).Transaction(func(tx *gorm.DB) error {
 		if err := r.checkTransactionExists(tx, transaction.UserID, transaction.TransactionID); err != nil {
 			return err
 		}
@@ -42,16 +54,14 @@ func (r *PostgresDBDataStore) UpdateUserBalance(ctx context.Context, transaction
 }
 
 func (*PostgresDBDataStore) checkTransactionExists(tx *gorm.DB, userID uint64, transactionID string) error {
-	var exists bool
+	var count int64
 	if err := tx.Model(&Transaction{}).
-		Select("1").
 		Where("user_id = ? AND transaction_id = ?", userID, transactionID).
-		Limit(1).
-		Find(&exists).Error; err != nil {
+		Count(&count).Error; err != nil {
 		return fmt.Errorf("failed to check transaction existence: %w", err)
 	}
 
-	if exists {
+	if count > 0 {
 		return ErrDuplicateTransaction
 	}
 

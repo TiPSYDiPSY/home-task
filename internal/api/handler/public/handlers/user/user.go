@@ -3,13 +3,14 @@ package user
 import (
 	"encoding/json"
 	"errors"
+	"io"
 	"net/http"
 	"strconv"
-	"strings"
 
 	"github.com/sirupsen/logrus"
 
 	"github.com/TiPSYDiPSY/home-task/internal/api/handler/public/handlers/middleware"
+	customErrors "github.com/TiPSYDiPSY/home-task/internal/errors"
 	"github.com/TiPSYDiPSY/home-task/internal/model/api"
 
 	"github.com/go-chi/chi/v5"
@@ -21,14 +22,16 @@ import (
 )
 
 const (
-	DecimalBase = 10
-	BitSize     = 64
+	DecimalBase        = 10
+	BitSize            = 64
+	MaxRequestBodySize = 1024
 )
 
-func UpdateBalance(userService service.UserService, validation *validation.Validator) http.HandlerFunc {
+func UpdateBalance(userService service.UserService, valid *validation.Validator) http.HandlerFunc {
+	logger := logrus.StandardLogger()
+
 	return func(w http.ResponseWriter, r *http.Request) {
 		ctx := r.Context()
-		log := logrus.WithContext(ctx)
 
 		userID, err := parseUserID(r)
 		if err != nil {
@@ -39,32 +42,40 @@ func UpdateBalance(userService service.UserService, validation *validation.Valid
 
 		sourceType := middleware.GetSourceType(ctx)
 
+		body, err := io.ReadAll(io.LimitReader(r.Body, MaxRequestBodySize))
+		if err != nil {
+			logger.WithError(err).Error("Failed to read request body")
+			response.BadRequest(ctx, w, "invalid request body")
+
+			return
+		}
+
 		var request api.TransactionRequest
-		if err := json.NewDecoder(r.Body).Decode(&request); err != nil {
-			log.WithError(err).Error("Failed to decode request body")
+		if err := json.Unmarshal(body, &request); err != nil {
+			logger.WithError(err).Error("Failed to decode request body")
 			response.BadRequest(ctx, w, "invalid JSON format")
 
 			return
 		}
 
-		if err := validation.ValidateStruct(&request); err != nil {
-			log.WithError(err).Error("Request validation failed")
+		if err := valid.ValidateStruct(&request); err != nil {
+			logger.WithError(err).Error("Request valid failed")
 			response.BadRequest(ctx, w, err.Error())
 
 			return
 		}
 
 		if err := userService.UpdateBalance(ctx, request, userID, sourceType); err != nil {
-			log.WithError(err).Error("Failed to update user balance")
+			logger.WithError(err).Error("Failed to update user balance")
 
 			switch {
-			case errors.Is(err, service.ErrUserNotFound):
+			case errors.Is(err, customErrors.ErrUserNotFound):
 				response.Error(ctx, w, http.StatusNotFound, "user not found")
-			case strings.Contains(err.Error(), "transaction already exists"):
+			case errors.Is(err, customErrors.ErrTransactionExists):
 				response.Error(ctx, w, http.StatusConflict, "transaction with this ID already exists")
-			case strings.Contains(err.Error(), "insufficient funds"):
+			case errors.Is(err, customErrors.ErrInsufficientFunds):
 				response.Error(ctx, w, http.StatusBadRequest, "insufficient funds for this transaction")
-			case strings.Contains(err.Error(), "invalid amount format"):
+			case errors.Is(err, customErrors.ErrInvalidAmountFormat):
 				response.Error(ctx, w, http.StatusBadRequest, "invalid amount format")
 			default:
 				response.Error(ctx, w, http.StatusInternalServerError, "failed to process transaction")
@@ -94,10 +105,10 @@ func GetBalance(userService service.UserService) http.HandlerFunc {
 		balanceResponse, err := userService.GetBalance(ctx, userID)
 		if err != nil {
 			switch {
-			case errors.Is(err, service.ErrUserNotFound):
+			case errors.Is(err, customErrors.ErrUserNotFound):
 				response.Error(ctx, w, http.StatusNotFound, "user not found")
 			default:
-				response.Error(ctx, w, http.StatusInternalServerError, "internal server Error")
+				response.Error(ctx, w, http.StatusInternalServerError, "internal server error")
 			}
 
 			return

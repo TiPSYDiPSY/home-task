@@ -17,8 +17,10 @@ import (
 )
 
 const (
-	readTimeoutSec  = 5
-	writeTimeoutSec = 60
+	readTimeoutSec     = 5
+	writeTimeoutSec    = 60
+	idleTimeoutSec     = 120
+	shutdownTimeoutSec = 30
 )
 
 func StartServer(ctx context.Context, c *config.ServerConfig, container service.Container) {
@@ -30,9 +32,9 @@ func StartServer(ctx context.Context, c *config.ServerConfig, container service.
 	srv := &http.Server{
 		ReadTimeout:  readTimeoutSec * time.Second,
 		WriteTimeout: writeTimeoutSec * time.Second,
+		IdleTimeout:  idleTimeoutSec * time.Second,
 		Addr:         ":" + c.Port,
 		Handler:      router,
-		// Disable HTTP/2 to force HTTP/1.1 only
 		TLSNextProto: make(map[string]func(*http.Server, *tls.Conn, http.Handler)),
 	}
 

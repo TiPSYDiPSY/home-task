@@ -8,6 +8,8 @@ import (
 	"github.com/shopspring/decimal"
 	"gorm.io/gorm"
 
+	errs "github.com/TiPSYDiPSY/home-task/internal/errors"
+
 	"github.com/TiPSYDiPSY/home-task/internal/db"
 	"github.com/TiPSYDiPSY/home-task/internal/model/api"
 )
@@ -18,7 +20,8 @@ type UserService interface {
 }
 
 type userService struct {
-	repo db.UserRepository
+	repo                  db.UserRepository
+	centsToDollarsDecimal decimal.Decimal // Move to struct field to avoid global variable
 }
 
 const (
@@ -26,11 +29,10 @@ const (
 	DecimalPlaces            = 2
 )
 
-var ErrUserNotFound = errors.New("user not found")
-
 func newUserService(repo db.UserRepository) UserService {
 	return &userService{
-		repo: repo,
+		repo:                  repo,
+		centsToDollarsDecimal: decimal.NewFromInt(CentsToDollarsMultiplier),
 	}
 }
 
@@ -38,14 +40,14 @@ func (s *userService) GetBalance(ctx context.Context, userID uint64) (api.Balanc
 	user, err := s.repo.GetUserData(ctx, userID)
 	if err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
-			return api.BalanceResponse{}, ErrUserNotFound
+			return api.BalanceResponse{}, errs.ErrUserNotFound
 		}
 
 		return api.BalanceResponse{}, fmt.Errorf("GetUserData error: %w", err)
 	}
 
 	centsDecimal := decimal.NewFromInt(user.Balance)
-	dollarsDecimal := centsDecimal.Div(decimal.NewFromInt(CentsToDollarsMultiplier))
+	dollarsDecimal := centsDecimal.Div(s.centsToDollarsDecimal)
 
 	return api.BalanceResponse{
 		UserID:  user.ID,
@@ -56,14 +58,14 @@ func (s *userService) GetBalance(ctx context.Context, userID uint64) (api.Balanc
 func (s *userService) UpdateBalance(ctx context.Context, req api.TransactionRequest, userID uint64, sourceType string) error {
 	amount, err := decimal.NewFromString(req.Amount)
 	if err != nil {
-		return fmt.Errorf("invalid amount format: %w", err)
+		return errs.ErrInvalidAmountFormat
 	}
 
 	if req.State == "lose" {
 		amount = amount.Neg()
 	}
 
-	amountInCents := amount.Mul(decimal.NewFromInt(CentsToDollarsMultiplier)).IntPart()
+	amountInCents := amount.Mul(s.centsToDollarsDecimal).IntPart()
 
 	if err := s.repo.UpdateUserBalance(ctx, db.Transaction{
 		UserID:        userID,
@@ -72,19 +74,16 @@ func (s *userService) UpdateBalance(ctx context.Context, req api.TransactionRequ
 		TransactionID: req.TransactionID,
 		Amount:        amountInCents,
 	}); err != nil {
-		if errors.Is(err, db.ErrUserNotFound) {
-			return ErrUserNotFound
+		switch {
+		case errors.Is(err, db.ErrUserNotFound):
+			return errs.ErrUserNotFound
+		case errors.Is(err, db.ErrDuplicateTransaction):
+			return errs.ErrTransactionExists
+		case errors.Is(err, db.ErrInsufficientFunds):
+			return errs.ErrInsufficientFunds
+		default:
+			return fmt.Errorf("UpdateUserBalance error: %w", err)
 		}
-
-		if errors.Is(err, db.ErrDuplicateTransaction) {
-			return fmt.Errorf("transaction already exists: %w", err)
-		}
-
-		if errors.Is(err, db.ErrInsufficientFunds) {
-			return fmt.Errorf("insufficient funds: %w", err)
-		}
-
-		return fmt.Errorf("UpdateUserBalance error: %w", err)
 	}
 
 	return nil

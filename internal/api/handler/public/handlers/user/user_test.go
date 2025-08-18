@@ -9,6 +9,7 @@ import (
 	"net/http/httptest"
 	"testing"
 
+	errs "github.com/TiPSYDiPSY/home-task/internal/errors"
 	"github.com/TiPSYDiPSY/home-task/internal/util/validation"
 	"github.com/go-chi/chi/v5"
 	"github.com/stretchr/testify/assert"
@@ -179,7 +180,7 @@ func TestGetBalance(t *testing.T) {
 			args: args{userID: "999"},
 			prepareMocks: func(mockService *service.MockUserService) {
 				mockService.EXPECT().GetBalance(mock.Anything, uint64(999)).Return(
-					api.BalanceResponse{}, service.ErrUserNotFound)
+					api.BalanceResponse{}, errs.ErrUserNotFound)
 			},
 			wantHTTPCode: http.StatusNotFound,
 			wantBody: `{
@@ -197,7 +198,7 @@ func TestGetBalance(t *testing.T) {
 			wantHTTPCode: http.StatusInternalServerError,
 			wantBody: `{
 				"error": "Internal Server Error",
-				"message": "internal server Error"
+				"message": "internal server error"
 			}`,
 		},
 		{
@@ -337,7 +338,7 @@ func TestUpdateBalance(t *testing.T) {
 					State:         "win",
 					Amount:        "10.00",
 					TransactionID: "txn-notfound",
-				}, uint64(999), "game").Return(service.ErrUserNotFound)
+				}, uint64(999), "game").Return(errs.ErrUserNotFound)
 			},
 			wantHTTPCode: http.StatusNotFound,
 			wantBody: `{
@@ -361,7 +362,7 @@ func TestUpdateBalance(t *testing.T) {
 					State:         "win",
 					Amount:        "10.00",
 					TransactionID: "txn-duplicate",
-				}, uint64(3), "game").Return(errors.New("transaction already exists: duplicate"))
+				}, uint64(3), "game").Return(errs.ErrTransactionExists)
 			},
 			wantHTTPCode: http.StatusConflict,
 			wantBody: `{
@@ -385,7 +386,7 @@ func TestUpdateBalance(t *testing.T) {
 					State:         "lose",
 					Amount:        "1000.00",
 					TransactionID: "txn-insufficient",
-				}, uint64(4), "game").Return(errors.New("insufficient funds: balance too low"))
+				}, uint64(4), "game").Return(errs.ErrInsufficientFunds)
 			},
 			wantHTTPCode: http.StatusBadRequest,
 			wantBody: `{
@@ -409,7 +410,7 @@ func TestUpdateBalance(t *testing.T) {
 					State:         "win",
 					Amount:        "invalid",
 					TransactionID: "txn-invalid-amount",
-				}, uint64(5), "game").Return(errors.New("invalid amount format: not a number"))
+				}, uint64(5), "game").Return(errs.ErrInvalidAmountFormat)
 			},
 			wantHTTPCode: http.StatusBadRequest,
 			wantBody: `{

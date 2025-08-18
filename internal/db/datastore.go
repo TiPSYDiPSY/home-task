@@ -3,6 +3,7 @@ package db
 import (
 	"context"
 	"fmt"
+	"time"
 
 	"github.com/TiPSYDiPSY/home-task/internal/db/gorm_logger"
 
@@ -16,6 +17,13 @@ import (
 type PostgresDBDataStore struct {
 	db *gorm.DB
 }
+
+const (
+	MaxOpenConns    = 25
+	MaxIdleConns    = 10
+	ConnMaxLifetime = 30 * time.Minute
+	ConnMaxIdleTime = 5 * time.Minute
+)
 
 func NewPostgresDBDataStore(ctx context.Context, c config.PostgresDBConfig) (*PostgresDBDataStore, error) {
 	log := logrus.WithContext(ctx)
@@ -33,6 +41,11 @@ func NewPostgresDBDataStore(ctx context.Context, c config.PostgresDBConfig) (*Po
 	if err != nil {
 		return nil, fmt.Errorf("failed to get underlying sql.DB: %w", err)
 	}
+
+	sqlDB.SetMaxOpenConns(MaxOpenConns)
+	sqlDB.SetMaxIdleConns(MaxIdleConns)
+	sqlDB.SetConnMaxLifetime(ConnMaxLifetime)
+	sqlDB.SetConnMaxIdleTime(ConnMaxIdleTime)
 
 	if err := sqlDB.Ping(); err != nil {
 		return nil, fmt.Errorf("failed to ping database: %w", err)

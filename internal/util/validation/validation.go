@@ -36,10 +36,6 @@ func (v *Validator) ValidateStruct(s any) error {
 	return nil
 }
 
-func ValidateStruct(s interface{}) error {
-	return NewValidator().ValidateStruct(s)
-}
-
 func getErrorMessage(fe validator.FieldError) string {
 	switch fe.Tag() {
 	case "required":

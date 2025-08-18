@@ -25,6 +25,10 @@ type ServerConfig struct {
 	DatabaseConnectionDetails PostgresDBConfig
 }
 
+const (
+	TracingSampleRate = 0.1
+)
+
 func NewServerConfig() *ServerConfig {
 	config := &ServerConfig{
 		Port: env.GetEnv("PORT", "8080"),
@@ -55,7 +59,7 @@ func (c PostgresDBConfig) getSSLMode() string {
 
 func InitTracer() func() {
 	tp := trace.NewTracerProvider(
-		trace.WithSampler(trace.AlwaysSample()),
+		trace.WithSampler(trace.TraceIDRatioBased(TracingSampleRate)),
 	)
 
 	otel.SetTracerProvider(tp)
