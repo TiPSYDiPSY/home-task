@@ -134,12 +134,11 @@ func TestGetBalance(t *testing.T) {
 					}, nil)
 			},
 			wantHTTPCode: http.StatusOK,
-			wantBody: `{
-				"data": {
+			wantBody: `
+				{
 					"userId": 1,
 					"balance": "15.50"
-				}
-			}`,
+				}`,
 		},
 		{
 			name: "zero balance",
@@ -152,12 +151,11 @@ func TestGetBalance(t *testing.T) {
 					}, nil)
 			},
 			wantHTTPCode: http.StatusOK,
-			wantBody: `{
-				"data": {
+			wantBody: `
+				{	
 					"userId": 2,
 					"balance": "0.00"
-				}
-			}`,
+				}`,
 		},
 		{
 			name: "large balance",
@@ -170,12 +168,11 @@ func TestGetBalance(t *testing.T) {
 					}, nil)
 			},
 			wantHTTPCode: http.StatusOK,
-			wantBody: `{
-				"data": {
+			wantBody: `
+				{
 					"userId": 3,
 					"balance": "12345.67"
-				}
-			}`,
+				}`,
 		},
 		{
 			name: "user not found",
@@ -293,12 +290,11 @@ func TestUpdateBalance(t *testing.T) {
 				}, uint64(1), "game").Return(nil)
 			},
 			wantHTTPCode: http.StatusOK,
-			wantBody: `{
-				"data": {
+			wantBody: `
+				{
 					"status": "success",
 					"message": "Transaction processed successfully"
-				}
-			}`,
+				}`,
 		},
 		{
 			name: "successful lose transaction",
@@ -319,12 +315,11 @@ func TestUpdateBalance(t *testing.T) {
 				}, uint64(2), "game").Return(nil)
 			},
 			wantHTTPCode: http.StatusOK,
-			wantBody: `{
-				"data": {
+			wantBody: `
+				{
 					"status": "success",
 					"message": "Transaction processed successfully"
-				}
-			}`,
+				}`,
 		},
 		{
 			name: "user not found",
@@ -529,12 +524,11 @@ func TestUpdateBalance(t *testing.T) {
 				}, uint64(9), "").Return(nil)
 			},
 			wantHTTPCode: http.StatusOK,
-			wantBody: `{
-				"data": {
+			wantBody: `
+				{
 					"status": "success",
 					"message": "Transaction processed successfully"
-				}
-			}`,
+				}`,
 		},
 	}
 

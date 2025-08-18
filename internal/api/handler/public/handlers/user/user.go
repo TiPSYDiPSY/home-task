@@ -73,7 +73,7 @@ func UpdateBalance(userService service.UserService, validation *validation.Valid
 			return
 		}
 
-		response.OK(ctx, w, map[string]string{
+		response.JSON(ctx, w, http.StatusOK, map[string]string{
 			"status":  "success",
 			"message": "Transaction processed successfully",
 		})
@@ -103,7 +103,7 @@ func GetBalance(userService service.UserService) http.HandlerFunc {
 			return
 		}
 
-		response.OK(ctx, w, balanceResponse)
+		response.JSON(ctx, w, http.StatusOK, balanceResponse)
 	}
 }
 

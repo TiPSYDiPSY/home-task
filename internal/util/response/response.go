@@ -74,12 +74,3 @@ func OK(ctx context.Context, w http.ResponseWriter, data interface{}, message ..
 func BadRequest(ctx context.Context, w http.ResponseWriter, message string) {
 	Error(ctx, w, http.StatusBadRequest, message)
 }
-
-func HandleError(ctx context.Context, w http.ResponseWriter, status int, message string) {
-	w.Header().Set("Content-Type", "application/json")
-	w.WriteHeader(status)
-
-	if err := json.NewEncoder(w).Encode(ErrorResponse{Message: message}); err != nil {
-		logrus.WithContext(ctx).WithError(err).Warn("could not encode error response")
-	}
-}
