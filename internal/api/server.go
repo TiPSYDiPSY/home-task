@@ -24,7 +24,7 @@ func StartServer(ctx context.Context, c *config.ServerConfig, container service.
 	log := logrus.WithContext(ctx)
 	log.Info("Starting http server on port: " + c.Port)
 
-	router := initServerMux(ctx, c, container)
+	router := initServerMux(container)
 
 	srv := &http.Server{
 		ReadTimeout:  readTimeoutSec * time.Second,
@@ -36,11 +36,11 @@ func StartServer(ctx context.Context, c *config.ServerConfig, container service.
 	log.WithContext(ctx).Fatal(srv.ListenAndServe())
 }
 
-func initServerMux(ctx context.Context, c *config.ServerConfig, container service.Container) *chi.Mux {
+func initServerMux(container service.Container) *chi.Mux {
 	r := chi.NewRouter()
 
 	operation.Init(r)
-	public.Init(ctx, c, container, r)
+	public.Init(container, r)
 
 	return r
 }

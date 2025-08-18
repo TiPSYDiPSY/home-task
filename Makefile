@@ -1,5 +1,8 @@
 GO_VERSION = $(shell sed -En 's/^go (.*)$$/\1/p' go.mod)
 
+format: ## formats the source code
+	@go fmt ./...
+
 install-tools:
 	@echo Installing tools
 	go install tool
@@ -10,3 +13,6 @@ lint: ## lints the source code
 
 test: ## execute unit tests on local env
 	go test ./...
+
+generate: ## generate source code (mocks, enums)
+	mockery

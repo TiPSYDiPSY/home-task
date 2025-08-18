@@ -1,7 +1,12 @@
 package config
 
 import (
+	"context"
 	"fmt"
+
+	log "github.com/sirupsen/logrus"
+	"go.opentelemetry.io/otel"
+	"go.opentelemetry.io/otel/sdk/trace"
 
 	"github.com/TiPSYDiPSY/home-task/internal/util/env"
 )
@@ -46,4 +51,18 @@ func (c PostgresDBConfig) getSSLMode() string {
 	}
 
 	return c.SSLMode
+}
+
+func InitTracer() func() {
+	tp := trace.NewTracerProvider(
+		trace.WithSampler(trace.AlwaysSample()),
+	)
+
+	otel.SetTracerProvider(tp)
+
+	return func() {
+		if err := tp.Shutdown(context.Background()); err != nil {
+			log.Printf("Error shutting down tracer provider: %v", err)
+		}
+	}
 }

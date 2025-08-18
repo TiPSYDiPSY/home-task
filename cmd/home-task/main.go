@@ -14,16 +14,19 @@ import (
 func main() {
 	ctx := context.Background()
 
+	shutdown := config.InitTracer()
+	defer shutdown()
+
 	servConfig := config.NewServerConfig()
-	log := logrus.WithContext(ctx)
+	logger := logrus.WithContext(ctx)
 
 	ds, err := db.NewPostgresDBDataStore(ctx, servConfig.DatabaseConnectionDetails)
 	if err != nil {
-		log.WithError(err).Fatal("Connect to DB failed with error")
+		logger.WithError(err).Fatal("Connect to DB failed with error")
 	}
 
 	if err := ds.RunAutoMigrate(ctx); err != nil {
-		log.WithError(err).Fatal("Failed to run database migrations")
+		logger.WithError(err).Fatal("Failed to run database migrations")
 	}
 
 	container := service.NewContainer(ds)

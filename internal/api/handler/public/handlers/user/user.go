@@ -5,6 +5,7 @@ import (
 	"errors"
 	"net/http"
 	"strconv"
+	"strings"
 
 	"github.com/sirupsen/logrus"
 
@@ -46,6 +47,21 @@ func UpdateBalance(userService service.UserService) http.HandlerFunc {
 		}
 
 		if err := userService.UpdateBalance(ctx, request, userID, sourceType); err != nil {
+			log.WithError(err).Error("Failed to update user balance")
+
+			switch {
+			case errors.Is(err, service.ErrUserNotFound):
+				response.Error(ctx, w, http.StatusNotFound, "user not found")
+			case strings.Contains(err.Error(), "transaction already exists"):
+				response.Error(ctx, w, http.StatusConflict, "transaction with this ID already exists")
+			case strings.Contains(err.Error(), "insufficient funds"):
+				response.Error(ctx, w, http.StatusBadRequest, "insufficient funds for this transaction")
+			case strings.Contains(err.Error(), "invalid amount format"):
+				response.Error(ctx, w, http.StatusBadRequest, "invalid amount format")
+			default:
+				response.Error(ctx, w, http.StatusInternalServerError, "failed to process transaction")
+			}
+
 			return
 		}
 
