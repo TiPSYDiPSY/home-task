@@ -26,18 +26,27 @@ type LoggingMiddleware struct {
 type loggingResponseWriter struct {
 	http.ResponseWriter
 	statusCode int
+	body       *bytes.Buffer
 }
 
 func newLoggingResponseWriter(w http.ResponseWriter) *loggingResponseWriter {
 	return &loggingResponseWriter{
 		ResponseWriter: w,
 		statusCode:     http.StatusOK,
+		body:           &bytes.Buffer{},
 	}
 }
 
 func (lrw *loggingResponseWriter) WriteHeader(code int) {
 	lrw.statusCode = code
 	lrw.ResponseWriter.WriteHeader(code)
+}
+
+func (lrw *loggingResponseWriter) Write(data []byte) (int, error) {
+	if lrw.body != nil {
+		lrw.body.Write(data)
+	}
+	return lrw.ResponseWriter.Write(data)
 }
 
 func NewLoggingMiddleware(config LoggingConfig) *LoggingMiddleware {
@@ -80,6 +89,10 @@ func (m *LoggingMiddleware) Middleware(next http.Handler) http.Handler {
 		lrw := newLoggingResponseWriter(w)
 		start := time.Now()
 
+		if !m.Config.BodyLoggingEnabled {
+			lrw.body = nil
+		}
+
 		var body string
 
 		if m.Config.BodyLoggingEnabled && slices.Contains([]string{http.MethodPost, http.MethodPut, http.MethodPatch}, r.Method) {
@@ -91,10 +104,13 @@ func (m *LoggingMiddleware) Middleware(next http.Handler) http.Handler {
 		}
 
 		initialLogFields := logrus.Fields{
-			"http_method": r.Method,
-			"request_uri": r.RequestURI,
-			"trace_id":    traceID,
-			"span_id":     spanID,
+			"http_method":  r.Method,
+			"http_version": r.Proto,
+			"content_type": r.Header.Get("Content-Type"),
+			"source_type":  r.Header.Get("Source-Type"),
+			"request_uri":  r.RequestURI,
+			"trace_id":     traceID,
+			"span_id":      spanID,
 		}
 
 		if body != "" {
@@ -108,12 +124,17 @@ func (m *LoggingMiddleware) Middleware(next http.Handler) http.Handler {
 		duration := time.Since(start)
 
 		completionLogFields := logrus.Fields{
-			"http_method": r.Method,
-			"request_uri": r.RequestURI,
-			"status_code": lrw.statusCode,
-			"duration_ms": duration.Milliseconds(),
-			"trace_id":    traceID,
-			"span_id":     spanID,
+			"http_method":   r.Method,
+			"response_body": body,
+			"request_uri":   r.RequestURI,
+			"status_code":   lrw.statusCode,
+			"duration_ms":   duration.Milliseconds(),
+			"trace_id":      traceID,
+			"span_id":       spanID,
+		}
+
+		if m.Config.BodyLoggingEnabled && lrw.body != nil && lrw.body.Len() > 0 {
+			completionLogFields["response_body"] = lrw.body.String()
 		}
 
 		logrus.WithContext(ctx).WithFields(completionLogFields).Info("HTTP Request Completed")

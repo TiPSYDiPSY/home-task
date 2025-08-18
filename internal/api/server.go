@@ -2,6 +2,7 @@ package api
 
 import (
 	"context"
+	"crypto/tls"
 	"net/http"
 	"time"
 
@@ -31,6 +32,8 @@ func StartServer(ctx context.Context, c *config.ServerConfig, container service.
 		WriteTimeout: writeTimeoutSec * time.Second,
 		Addr:         ":" + c.Port,
 		Handler:      router,
+		// Disable HTTP/2 to force HTTP/1.1 only
+		TLSNextProto: make(map[string]func(*http.Server, *tls.Conn, http.Handler)),
 	}
 
 	log.WithContext(ctx).Fatal(srv.ListenAndServe())

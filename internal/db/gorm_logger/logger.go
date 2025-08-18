@@ -80,6 +80,8 @@ func (l *Logger) Trace(ctx context.Context, begin time.Time, fc func() (sql stri
 		fields["performance"] = "slow"
 	} else if elapsed < 1*time.Millisecond {
 		fields["performance"] = "fast"
+	} else {
+		fields["performance"] = "normal"
 	}
 
 	cleanSQL := l.cleanSQL(sql)

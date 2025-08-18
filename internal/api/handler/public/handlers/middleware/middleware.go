@@ -49,6 +49,19 @@ func SourceTypeValidator(next http.Handler) http.Handler {
 	})
 }
 
+func HTTPVersionValidator(next http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		ctx := r.Context()
+
+		if r.ProtoMajor != 1 || r.ProtoMinor != 1 {
+			response.BadRequest(ctx, w, "HTTP/1.1 is required")
+			return
+		}
+
+		next.ServeHTTP(w, r)
+	})
+}
+
 func GetSourceType(ctx context.Context) string {
 	if sourceType, ok := ctx.Value(SourceTypeKey).(string); ok {
 		return sourceType
