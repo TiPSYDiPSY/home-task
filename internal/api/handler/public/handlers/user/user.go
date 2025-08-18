@@ -15,6 +15,7 @@ import (
 	"github.com/go-chi/chi/v5"
 
 	"github.com/TiPSYDiPSY/home-task/internal/util/response"
+	"github.com/TiPSYDiPSY/home-task/internal/util/validation"
 
 	"github.com/TiPSYDiPSY/home-task/internal/service"
 )
@@ -42,6 +43,13 @@ func UpdateBalance(userService service.UserService) http.HandlerFunc {
 		if err := json.NewDecoder(r.Body).Decode(&request); err != nil {
 			log.WithError(err).Error("Failed to decode request body")
 			response.BadRequest(ctx, w, "invalid JSON format")
+
+			return
+		}
+
+		if err := validation.ValidateStruct(&request); err != nil {
+			log.WithError(err).Error("Request validation failed")
+			response.BadRequest(ctx, w, err.Error())
 
 			return
 		}

@@ -6,7 +6,7 @@ type BalanceResponse struct {
 }
 
 type TransactionRequest struct {
-	State         string `json:"state"`
-	Amount        string `json:"amount"`
-	TransactionID string `json:"transactionId"` //nolint: tagliatelle // Per API spec
+	State         string `json:"state"         validate:"required,oneof=win lose"`
+	Amount        string `json:"amount"        validate:"required"`
+	TransactionID string `json:"transactionId" validate:"required"` //nolint: tagliatelle // Per API spec
 }
