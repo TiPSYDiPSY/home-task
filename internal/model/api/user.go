@@ -1,7 +1,7 @@
 package api
 
 type BalanceResponse struct {
-	UserID  uint64 `json:"user_id"`
+	UserID  uint64 `json:"userId"` //nolint: tagliatelle // Per API spec
 	Balance string `json:"balance"`
 }
 

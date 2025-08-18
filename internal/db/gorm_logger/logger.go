@@ -13,21 +13,19 @@ import (
 type Logger struct {
 	SlowThreshold time.Duration
 	LogLevel      logger.LogLevel
-	SkipMigration bool // Skip migration-related queries
+	SkipMigration bool
 }
 
 const (
-	// DefaultSlowThreshold is the default threshold for slow query detection
 	DefaultSlowThreshold = 200 * time.Millisecond
-	// MaxSQLLength is the maximum length for SQL logging before truncation
-	MaxSQLLength = 200
+	MaxSQLLength         = 200
 )
 
 func New() *Logger {
 	return &Logger{
 		SlowThreshold: DefaultSlowThreshold,
 		LogLevel:      logger.Info,
-		SkipMigration: true, // Skip migration queries by default
+		SkipMigration: true,
 	}
 }
 
@@ -67,7 +65,6 @@ func (l *Logger) Trace(ctx context.Context, begin time.Time, fc func() (sql stri
 		return
 	}
 
-	// Categorize the query type
 	queryType := l.getQueryType(sql)
 
 	fields := logrus.Fields{
@@ -79,7 +76,6 @@ func (l *Logger) Trace(ctx context.Context, begin time.Time, fc func() (sql stri
 		fields["rows"] = rows
 	}
 
-	// Add performance indicators
 	if elapsed > l.SlowThreshold {
 		fields["performance"] = "slow"
 	} else if elapsed < 1*time.Millisecond {
@@ -116,7 +112,7 @@ func (l *Logger) shouldSkipQuery(sql string) bool {
 	}
 
 	if l.SkipMigration {
-		skipPatterns = append(skipPatterns, "migration_table_name") // Add your migration table name here
+		skipPatterns = append(skipPatterns, "migration_table_name")
 	}
 
 	sqlLower := strings.ToLower(sql)
@@ -130,13 +126,10 @@ func (l *Logger) shouldSkipQuery(sql string) bool {
 }
 
 func (*Logger) cleanSQL(sql string) string {
-	// Replace multiple spaces with single space
 	cleaned := strings.Join(strings.Fields(sql), " ")
 
-	// Remove escaped quotes around table and column names for better readability
 	cleaned = strings.ReplaceAll(cleaned, "\"", "")
 
-	// Truncate very long queries
 	if len(cleaned) > MaxSQLLength {
 		cleaned = cleaned[:MaxSQLLength] + "..."
 	}
@@ -144,7 +137,6 @@ func (*Logger) cleanSQL(sql string) string {
 	return cleaned
 }
 
-// getQueryType categorizes the query based on its SQL string
 func (*Logger) getQueryType(sql string) string {
 	sql = strings.TrimSpace(strings.ToUpper(sql))
 
@@ -162,7 +154,6 @@ func (*Logger) getQueryType(sql string) string {
 	}
 }
 
-// getQueryEmoji returns an emoji representing the query type
 func (*Logger) getQueryEmoji(queryType string) string {
 	emojiMap := map[string]string{
 		"SELECT": "🔍",

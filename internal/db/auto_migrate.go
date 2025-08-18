@@ -23,9 +23,9 @@ func (r *PostgresDBDataStore) RunAutoMigrate(ctx context.Context) error {
 
 	//nolint: revive,mnd // This is stub data
 	predefinedUsers := []*User{
-		{ID: 1, Balance: 1000},
-		{ID: 2, Balance: 1500},
-		{ID: 3, Balance: 2000},
+		{ID: 1, Balance: 0},
+		{ID: 2, Balance: 0},
+		{ID: 3, Balance: 0},
 	}
 
 	for _, user := range predefinedUsers {

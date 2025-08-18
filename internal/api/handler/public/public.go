@@ -2,8 +2,8 @@ package public
 
 import (
 	"github.com/TiPSYDiPSY/home-task/internal/api/handler/public/handlers/middleware"
-
 	"github.com/TiPSYDiPSY/home-task/internal/api/handler/public/handlers/user"
+	"github.com/TiPSYDiPSY/home-task/internal/util/validation"
 
 	"github.com/go-chi/chi/v5"
 
@@ -22,7 +22,7 @@ func Init(container service.Container, mainRouter *chi.Mux) {
 
 	subRouter.Group(func(r chi.Router) {
 		r.Use(middleware.SourceTypeValidator)
-		r.Post("/{userID}/transaction", user.UpdateBalance(container.UserService))
+		r.Post("/{userID}/transaction", user.UpdateBalance(container.UserService, validation.NewValidator()))
 	})
 
 	subRouter.Group(func(r chi.Router) {

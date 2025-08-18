@@ -9,6 +9,7 @@ import (
 	"net/http/httptest"
 	"testing"
 
+	"github.com/TiPSYDiPSY/home-task/internal/util/validation"
 	"github.com/go-chi/chi/v5"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
@@ -135,7 +136,7 @@ func TestGetBalance(t *testing.T) {
 			wantHTTPCode: http.StatusOK,
 			wantBody: `{
 				"data": {
-					"user_id": 1,
+					"userId": 1,
 					"balance": "15.50"
 				}
 			}`,
@@ -153,7 +154,7 @@ func TestGetBalance(t *testing.T) {
 			wantHTTPCode: http.StatusOK,
 			wantBody: `{
 				"data": {
-					"user_id": 2,
+					"userId": 2,
 					"balance": "0.00"
 				}
 			}`,
@@ -171,7 +172,7 @@ func TestGetBalance(t *testing.T) {
 			wantHTTPCode: http.StatusOK,
 			wantBody: `{
 				"data": {
-					"user_id": 3,
+					"userId": 3,
 					"balance": "12345.67"
 				}
 			}`,
@@ -565,7 +566,7 @@ func TestUpdateBalance(t *testing.T) {
 			}
 
 			rr := httptest.NewRecorder()
-			handler := UpdateBalance(mockService)
+			handler := UpdateBalance(mockService, validation.NewValidator())
 
 			handler.ServeHTTP(rr, req)
 

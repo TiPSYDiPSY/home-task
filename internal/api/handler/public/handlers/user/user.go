@@ -25,7 +25,7 @@ const (
 	BitSize     = 64
 )
 
-func UpdateBalance(userService service.UserService) http.HandlerFunc {
+func UpdateBalance(userService service.UserService, validation *validation.Validator) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		ctx := r.Context()
 		log := logrus.WithContext(ctx)
